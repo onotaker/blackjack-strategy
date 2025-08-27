@@ -8,11 +8,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0f172a; /* Slate-900 */
@@ -21,14 +16,12 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            height: 100vh;
             padding: 0;
-            box-sizing: border-box;
         }
         .container {
             width: 390px;
-            max-width: 390px;
             min-width: 390px;
+            max-width: 390px;
             min-height: 100vh;
             background-color: #1e293b; /* Slate-800 */
             padding: 1rem;
@@ -49,12 +42,13 @@
             }
         }
         .table-container {
+            width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
         table {
             width: 100%;
-            min-width: 480px;
+            min-width: 390px;
             border-collapse: separate;
             border-spacing: 0;
             margin-top: 1rem;
@@ -87,22 +81,22 @@
         .action-S { background-color: #16a34a; color: white; }
         .action-D { background-color: #2563eb; color: white; }
         .action-P { background-color: #8b5cf6; color: white; }
-        .action-R { background-color: #94a3b8; color: #1f2937; }
+        .action-R { background-color: #f59e0b; color: #1f2937; }
         .highlighted-cell {
-            background-color: #fb923c;
+            background-color: #8b5cf6;
             color: white;
-            box-shadow: 0 0 20px 5px #fb923c;
+            box-shadow: 0 0 20px 5px #8b5cf6;
             font-weight: 700;
             transform: scale(1.5);
             position: relative;
             z-index: 10;
         }
         .highlighted-row-header {
-            background-color: #f59e0b;
+            background-color: #475569;
             font-weight: 700;
         }
         .highlighted-col-header {
-            background-color: #f59e0b;
+            background-color: #475569;
             font-weight: 700;
         }
         .back-button, .nav-button {
@@ -135,31 +129,6 @@
         .animate-fadeIn {
             animation: fadeIn 0.5s ease-out forwards;
         }
-        .highlighted-pd {
-            background-color: #f59e0b;
-            font-weight: 700;
-            transform: scale(1.2);
-            position: relative;
-            z-index: 5;
-        }
-        .highlighted-intersection {
-            background-color: #c084fc;
-            color: white;
-            font-weight: 800;
-            transform: scale(1.5);
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 5px 2px rgba(192, 132, 252, 0.7); }
-            50% { box-shadow: 0 0 15px 5px rgba(192, 132, 252, 1); }
-            100% { box-shadow: 0 0 5px 2px rgba(192, 132, 252, 0.7); }
-        }
-        .app-version {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-bottom: 0.25rem;
-            letter-spacing: 0.04em;
-        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-200">
@@ -168,12 +137,22 @@
     <!-- Main screen (initially visible) -->
     <div id="main-screen" class="flex flex-col items-center animate-fadeIn">
         <h1 class="text-2xl font-bold mb-2">ブラックジャック基本戦略</h1>
-        <div id="app-version" class="app-version">バージョン: <span id="version-value">1.0.1</span></div>
         <p class="text-sm text-center mb-4 text-slate-400">見たい戦略表のボタンを選択してください。</p>
+
+        <!-- Navigation buttons -->
         <div class="flex flex-col items-center gap-4 mb-4 w-full">
             <button onclick="showSection('hard-hand-screen')" class="nav-button w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg">ハード・ハンド戦略</button>
             <button onclick="showSection('soft-hand-screen')" class="nav-button w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg">ソフト・ハンド戦略</button>
             <button onclick="showSection('pair-hand-screen')" class="nav-button w-full bg-violet-600 text-white font-bold py-3 px-4 rounded-lg">ペア・ハンド戦略</button>
+        </div>
+
+        <!-- Legend -->
+        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700">
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>サレンダー (R)</span>
         </div>
     </div>
 
@@ -181,164 +160,176 @@
     <div id="hard-hand-screen" class="hidden flex-col items-center">
         <h1 class="text-2xl font-bold mb-2">ハード・ハンド戦略</h1>
         <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札の合計から、最適な行動を導き出します。</p>
-        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
-        </div>
+        
+        <!-- Hard Hand table -->
         <div class="table-container">
-            <!-- （テーブル内容は省略：元コードのまま） -->
+            <table class="text-sm" data-strategy="hard">
+                <thead>
+                    <tr>
+                        <!-- 「P \ D」削除 -->
+                        <th class="rounded-tl-lg"></th>
+                        <th data-dealer="2">2</th>
+                        <th data-dealer="3">3</th>
+                        <th data-dealer="4">4</th>
+                        <th data-dealer="5">5</th>
+                        <th data-dealer="6">6</th>
+                        <th data-dealer="7">7</th>
+                        <th data-dealer="8">8</th>
+                        <th data-dealer="9">9</th>
+                        <th data-dealer="10">10</th>
+                        <th data-dealer="A" class="rounded-tr-lg">A</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-hand="8">8</td>
+                        <td class="action-H" data-hand="8" data-dealer="2">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="3">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="4">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="5">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="6">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="7">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="8">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="9">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="10">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="A">H</td>
+                    </tr>
+                    <tr><td data-hand="9">9</td><td class="action-H" data-hand="9" data-dealer="2">H</td><td class="action-D" data-hand="9" data-dealer="3">D</td><td class="action-D" data-hand="9" data-dealer="4">D</td><td class="action-D" data-hand="9" data-dealer="5">D</td><td class="action-D" data-hand="9" data-dealer="6">D</td><td class="action-H" data-hand="9" data-dealer="7">H</td><td class="action-H" data-hand="9" data-dealer="8">H</td><td class="action-H" data-hand="9" data-dealer="9">H</td><td class="action-H" data-hand="9" data-dealer="10">H</td><td class="action-H" data-hand="9" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="10">10</td><td class="action-D" data-hand="10" data-dealer="2">D</td><td class="action-D" data-hand="10" data-dealer="3">D</td><td class="action-D" data-hand="10" data-dealer="4">D</td><td class="action-D" data-hand="10" data-dealer="5">D</td><td class="action-D" data-hand="10" data-dealer="6">D</td><td class="action-D" data-hand="10" data-dealer="7">D</td><td class="action-D" data-hand="10" data-dealer="8">D</td><td class="action-H" data-hand="10" data-dealer="9">H</td><td class="action-H" data-hand="10" data-dealer="10">H</td><td class="action-H" data-hand="10" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="11">11</td><td class="action-D" data-hand="11" data-dealer="2">D</td><td class="action-D" data-hand="11" data-dealer="3">D</td><td class="action-D" data-hand="11" data-dealer="4">D</td><td class="action-D" data-hand="11" data-dealer="5">D</td><td class="action-D" data-hand="11" data-dealer="6">D</td><td class="action-D" data-hand="11" data-dealer="7">D</td><td class="action-D" data-hand="11" data-dealer="8">D</td><td class="action-D" data-hand="11" data-dealer="9">D</td><td class="action-D" data-hand="11" data-dealer="10">D</td><td class="action-D" data-hand="11" data-dealer="A">D</td></tr>
+                    <tr><td data-hand="12">12</td><td class="action-H" data-hand="12" data-dealer="2">H</td><td class="action-H" data-hand="12" data-dealer="3">H</td><td class="action-S" data-hand="12" data-dealer="4">S</td><td class="action-S" data-hand="12" data-dealer="5">S</td><td class="action-S" data-hand="12" data-dealer="6">S</td><td class="action-H" data-hand="12" data-dealer="7">H</td><td class="action-H" data-hand="12" data-dealer="8">H</td><td class="action-H" data-hand="12" data-dealer="9">H</td><td class="action-H" data-hand="12" data-dealer="10">H</td><td class="action-H" data-hand="12" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="13">13</td><td class="action-S" data-hand="13" data-dealer="2">S</td><td class="action-S" data-hand="13" data-dealer="3">S</td><td class="action-S" data-hand="13" data-dealer="4">S</td><td class="action-S" data-hand="13" data-dealer="5">S</td><td class="action-S" data-hand="13" data-dealer="6">S</td><td class="action-H" data-hand="13" data-dealer="7">H</td><td class="action-H" data-hand="13" data-dealer="8">H</td><td class="action-H" data-hand="13" data-dealer="9">H</td><td class="action-H" data-hand="13" data-dealer="10">H</td><td class="action-H" data-hand="13" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="14">14</td><td class="action-S" data-hand="14" data-dealer="2">S</td><td class="action-S" data-hand="14" data-dealer="3">S</td><td class="action-S" data-hand="14" data-dealer="4">S</td><td class="action-S" data-hand="14" data-dealer="5">S</td><td class="action-S" data-hand="14" data-dealer="6">S</td><td class="action-H" data-hand="14" data-dealer="7">H</td><td class="action-H" data-hand="14" data-dealer="8">H</td><td class="action-H" data-hand="14" data-dealer="9">H</td><td class="action-H" data-hand="14" data-dealer="10">H</td><td class="action-H" data-hand="14" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="15">15</td><td class="action-S" data-hand="15" data-dealer="2">S</td><td class="action-S" data-hand="15" data-dealer="3">S</td><td class="action-S" data-hand="15" data-dealer="4">S</td><td class="action-S" data-hand="15" data-dealer="5">S</td><td class="action-S" data-hand="15" data-dealer="6">S</td><td class="action-H" data-hand="15" data-dealer="7">H</td><td class="action-H" data-hand="15" data-dealer="8">H</td><td class="action-H" data-hand="15" data-dealer="9">H</td><td class="action-R" data-hand="15" data-dealer="10">R</td><td class="action-H" data-hand="15" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="16">16</td><td class="action-S" data-hand="16" data-dealer="2">S</td><td class="action-S" data-hand="16" data-dealer="3">S</td><td class="action-S" data-hand="16" data-dealer="4">S</td><td class="action-S" data-hand="16" data-dealer="5">S</td><td class="action-S" data-hand="16" data-dealer="6">S</td><td class="action-H" data-hand="16" data-dealer="7">H</td><td class="action-H" data-hand="16" data-dealer="8">H</td><td class="action-R" data-hand="16" data-dealer="9">R</td><td class="action-R" data-hand="16" data-dealer="10">R</td><td class="action-H" data-hand="16" data-dealer="A">H</td></tr>
+                    <tr>
+                        <td data-hand="17">17</td>
+                        <td class="action-S" data-hand="17" data-dealer="2">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="3">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="4">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="5">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="6">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="7">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="8">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="9">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="10">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="A">S</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+        <!-- Back button -->
         <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
     </div>
-    <!-- Soft Hand screen (initially hidden) -->
-    <div id="soft-hand-screen" class="hidden flex-col items-center">
-        <h1 class="text-2xl font-bold mb-2">ソフト・ハンド戦略</h1>
-        <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札（Aを含む）の組み合わせから、最適な行動を導き出します。</p>
-        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
-        </div>
-        <div class="table-container">
-            <!-- （テーブル内容は省略：元コードのまま） -->
-        </div>
-        <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
-    </div>
-    <!-- Pair Hand screen (initially hidden) -->
-    <div id="pair-hand-screen" class="hidden flex-col items-center">
-        <h1 class="text-2xl font-bold mb-2">ペア・ハンド戦略</h1>
-        <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札（同じ数字のペア）の組み合わせから、最適な行動を導き出します。</p>
-        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
-            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
-        </div>
-        <div class="table-container">
-            <!-- （テーブル内容は省略：元コードのまま） -->
-        </div>
-        <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
-    </div>
-
+    <!-- (他の画面のtableにも同様の修正を適用する場合はご指示ください) -->
 </div>
 
 <script>
-    // バージョン情報
-    const APP_VERSION = "1.0.0";
-
+    const sections = ['main-screen', 'hard-hand-screen', 'soft-hand-screen', 'pair-hand-screen'];
     let selectedPlayerHand = null;
     let selectedDealerCard = null;
 
     function showSection(sectionId) {
-        selectedPlayerHand = null;
-        selectedDealerCard = null;
-        updateHighlight();
-        const sections = document.querySelectorAll('.container > div');
-        sections.forEach(section => {
-            if (section.id === sectionId) {
-                section.classList.remove('hidden');
-                section.classList.add('animate-fadeIn');
-            } else {
-                section.classList.add('hidden');
-                section.classList.remove('animate-fadeIn');
+        sections.forEach(id => {
+            const section = document.getElementById(id);
+            if (section) {
+                if (id === sectionId) {
+                    section.classList.remove('hidden');
+                    section.classList.add('animate-fadeIn');
+                } else {
+                    section.classList.add('hidden');
+                    section.classList.remove('animate-fadeIn');
+                }
             }
         });
+        if (sectionId !== 'main-screen') {
+            initializeTableListeners(sectionId);
+        } else {
+            selectedPlayerHand = null;
+            selectedDealerCard = null;
+        }
+        updateHighlight(sectionId);
     }
+
     function goBack() {
         showSection('main-screen');
     }
-    function updateHighlight() {
-        const tables = document.querySelectorAll('table');
-        tables.forEach(table => {
-            const allCells = table.querySelectorAll('td, th');
-            allCells.forEach(cell => {
-                cell.classList.remove('highlighted-row-header', 'highlighted-col-header', 'highlighted-cell', 'highlighted-pd', 'highlighted-intersection');
-            });
-            if (selectedPlayerHand) {
-                const playerHeaders = table.querySelectorAll(`[data-hand="${selectedPlayerHand}"]`);
-                playerHeaders.forEach(header => {
-                    header.classList.add('highlighted-row-header');
-                });
-            }
-            if (selectedDealerCard) {
-                const dealerHeader = table.querySelector(`thead th[data-dealer="${selectedDealerCard}"]`);
-                if (dealerHeader) {
-                    dealerHeader.classList.add('highlighted-col-header');
-                    const dealerIndex = Array.from(dealerHeader.parentNode.children).indexOf(dealerHeader);
-                    table.querySelectorAll('tr').forEach(row => {
-                        const cell = row.children[dealerIndex];
-                        if (cell && cell.tagName === 'TD') {
-                            cell.classList.add('highlighted-col-header');
-                        }
-                    });
-                }
-            }
-            if (selectedPlayerHand && selectedDealerCard) {
-                const intersectionCell = table.querySelector(`td[data-hand="${selectedPlayerHand}"][data-dealer="${selectedDealerCard}"]`);
-                if (intersectionCell) {
-                    intersectionCell.classList.add('highlighted-intersection');
-                    intersectionCell.classList.remove('highlighted-row-header', 'highlighted-col-header');
-                }
-            }
+
+    function updateHighlight(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        const table = section.querySelector('table');
+        if (!table) return;
+        // Remove all highlights
+        const highlightedCells = table.querySelectorAll('.highlighted-cell, .highlighted-row-header, .highlighted-col-header');
+        highlightedCells.forEach(cell => {
+            cell.classList.remove('highlighted-cell', 'highlighted-row-header', 'highlighted-col-header');
+            cell.style.removeProperty('transform');
         });
-    }
-    function initializeTableListeners() {
-        const tables = document.querySelectorAll('table');
-        tables.forEach(table => {
-            const playerHandHeaders = table.querySelectorAll('tbody td[data-hand]');
-            playerHandHeaders.forEach(cell => {
-                cell.onclick = (event) => {
-                    const currentHand = event.target.dataset.hand;
-                    if (selectedPlayerHand === currentHand) {
-                        selectedPlayerHand = null;
-                    } else {
-                        selectedPlayerHand = currentHand;
-                    }
-                    updateHighlight();
-                };
-            });
-            const dealerHeaders = table.querySelectorAll('thead th[data-dealer]');
-            dealerHeaders.forEach(cell => {
-                cell.onclick = (event) => {
-                    const currentDealer = event.target.dataset.dealer;
-                    if (selectedDealerCard === currentDealer) {
-                        selectedDealerCard = null;
-                    } else {
-                        selectedDealerCard = currentDealer;
-                    }
-                    updateHighlight();
-                };
-            });
-            const actionCells = table.querySelectorAll('tbody td[data-hand][data-dealer]');
-            actionCells.forEach(cell => {
-                cell.onclick = (event) => {
-                    const targetHand = event.target.dataset.hand;
-                    const targetDealer = event.target.dataset.dealer;
-                    if (selectedPlayerHand === targetHand && selectedDealerCard === targetDealer) {
-                        selectedPlayerHand = null;
-                        selectedDealerCard = null;
-                    } else {
-                        selectedPlayerHand = targetHand;
-                        selectedDealerCard = targetDealer;
-                    }
-                    updateHighlight();
-                };
-            });
-        });
-    }
-    window.onload = function() {
-        const versionValueSpan = document.getElementById('version-value');
-        if (versionValueSpan) {
-            versionValueSpan.textContent = APP_VERSION;
+        // Highlight
+        if (selectedPlayerHand && selectedDealerCard) {
+            const actionCell = table.querySelector(`td[data-hand="${selectedPlayerHand}"][data-dealer="${selectedDealerCard}"]`);
+            if (actionCell) actionCell.classList.add('highlighted-cell');
+            const rowHeader = table.querySelector(`td[data-hand="${selectedPlayerHand}"]:not([data-dealer])`);
+            if (rowHeader) rowHeader.classList.add('highlighted-row-header');
+            const colHeader = table.querySelector(`th[data-dealer="${selectedDealerCard}"]`);
+            if (colHeader) colHeader.classList.add('highlighted-col-header');
         }
+    }
+
+    function initializeTableListeners(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        const table = section.querySelector('table');
+        if (!table) return;
+        selectedPlayerHand = null;
+        selectedDealerCard = null;
+        updateHighlight(sectionId);
+
+        // Player hand cells
+        const playerHandCells = table.querySelectorAll('tbody tr td:first-child');
+        playerHandCells.forEach(cell => {
+            cell.onclick = (event) => {
+                if (selectedPlayerHand === event.target.dataset.hand) {
+                    selectedPlayerHand = null;
+                } else {
+                    selectedPlayerHand = event.target.dataset.hand;
+                }
+                updateHighlight(sectionId);
+            };
+        });
+        // Dealer headers
+        const dealerHeaderCells = table.querySelectorAll('thead tr th[data-dealer]');
+        dealerHeaderCells.forEach(cell => {
+            cell.onclick = (event) => {
+                if (selectedDealerCard === event.target.dataset.dealer) {
+                    selectedDealerCard = null;
+                } else {
+                    selectedDealerCard = event.target.dataset.dealer;
+                }
+                updateHighlight(sectionId);
+            };
+        });
+        // Action cells
+        const actionCells = table.querySelectorAll('tbody td[data-hand][data-dealer]');
+        actionCells.forEach(cell => {
+            cell.onclick = (event) => {
+                const targetHand = event.target.dataset.hand;
+                const targetDealer = event.target.dataset.dealer;
+                if (selectedPlayerHand === targetHand && selectedDealerCard === targetDealer) {
+                    selectedPlayerHand = null;
+                    selectedDealerCard = null;
+                } else {
+                    selectedPlayerHand = targetHand;
+                    selectedDealerCard = targetDealer;
+                }
+                updateHighlight(sectionId);
+            };
+        });
+    }
+
+    window.onload = function() {
         showSection('main-screen');
-        initializeTableListeners();
     };
 </script>
 </body>
