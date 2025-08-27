@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ブラックジャック基本戦略</title>
+    <!-- Inter font and Tailwind CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate-900 */
+            color: #e2e8f0; /* Slate-200 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 390px; /* Optimized for iPhone 14 width */
+            width: 100%;
+            background-color: #1e293b; /* Slate-800 */
+            padding: 1rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative; /* For section animation */
+        }
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+        }
+        table {
+            width: 100%;
+            min-width: 480px; /* Minimum width to fit columns on mobile */
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 1rem;
+            table-layout: fixed;
+        }
+        th, td {
+            padding: 0.5rem;
+            text-align: center;
+            border-bottom: 1px solid #334155; /* Slate-700 */
+            border-right: 1px solid #334155;
+            font-size: 0.75rem; /* Smaller font size */
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        /* Remove border on the last column */
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+        th {
+            background-color: #334155; /* Slate-700 */
+            font-weight: 600;
+        }
+        td {
+            background-color: #1e293b; /* Slate-800 */
+            font-weight: 400;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .action-H { background-color: #dc2626; color: white; } /* Red for Hit */
+        .action-S { background-color: #16a34a; color: white; } /* Green for Stand */
+        .action-D { background-color: #2563eb; color: white; } /* Blue for Double Down */
+        .action-P { background-color: #8b5cf6; color: white; } /* Violet for Split */
+        .action-R { background-color: #94a3b8; color: #1f2937; } /* Slate-400 for Surrender */
+
+        /* Highlight styles */
+        .highlighted-cell {
+            background-color: #fb923c; /* Orange-400 */
+            color: white;
+            box-shadow: 0 0 20px 5px #fb923c;
+            font-weight: 700;
+            transform: scale(1.5); /* Significantly enlarge the cell by 1.5x */
+            position: relative;
+            z-index: 10;
+        }
+        .highlighted-row-header {
+            background-color: #f59e0b; /* Amber-500 */
+            font-weight: 700;
+        }
+        .highlighted-col-header {
+            background-color: #f59e0b; /* Amber-500 */
+            font-weight: 700;
+        }
+        .back-button, .nav-button {
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .back-button:hover, .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .back-button:active, .nav-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* New animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Combined highlight for P and D */
+        .highlighted-pd {
+            background-color: #f59e0b; /* Amber-500 */
+            font-weight: 700;
+            transform: scale(1.2); /* Slightly enlarge both headers */
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Highlighted cell at the intersection of P and D */
+        .highlighted-intersection {
+            background-color: #c084fc; /* Violet-400 */
+            color: white;
+            font-weight: 800;
+            transform: scale(1.5);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px 2px rgba(192, 132, 252, 0.7); }
+            50% { box-shadow: 0 0 15px 5px rgba(192, 132, 252, 1); }
+            100% { box-shadow: 0 0 5px 2px rgba(192, 132, 252, 0.7); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+
+<div class="container flex flex-col items-center">
+    <!-- Main screen (initially visible) -->
+    <div id="main-screen" class="flex flex-col items-center animate-fadeIn">
+        <h1 class="text-2xl font-bold mb-2">ブラックジャック基本戦略</h1>
+        <p class="text-sm text-center mb-4 text-slate-400">見たい戦略表のボタンを選択してください。</p>
+
+        <!-- Navigation buttons -->
+        <div class="flex flex-col items-center gap-4 mb-4 w-full">
+            <button onclick="showSection('hard-hand-screen')" class="nav-button w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg">ハード・ハンド戦略</button>
+            <button onclick="showSection('soft-hand-screen')" class="nav-button w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg">ソフト・ハンド戦略</button>
+            <button onclick="showSection('pair-hand-screen')" class="nav-button w-full bg-violet-600 text-white font-bold py-3 px-4 rounded-lg">ペア・ハンド戦略</button>
+        </div>
+    </div>
+
+    <!-- Hard Hand screen (initially hidden) -->
+    <div id="hard-hand-screen" class="hidden flex-col items-center">
+        <h1 class="text-2xl font-bold mb-2">ハード・ハンド戦略</h1>
+        <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札の合計から、最適な行動を導き出します。</p>
+
+        <!-- Legend -->
+        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
+        </div>
+
+        <!-- Hard Hand table -->
+        <div class="table-container">
+            <table class="text-sm" data-strategy="hard">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">P \ D</th>
+                        <th data-dealer="2">2</th>
+                        <th data-dealer="3">3</th>
+                        <th data-dealer="4">4</th>
+                        <th data-dealer="5">5</th>
+                        <th data-dealer="6">6</th>
+                        <th data-dealer="7">7</th>
+                        <th data-dealer="8">8</th>
+                        <th data-dealer="9">9</th>
+                        <th data-dealer="10">10</th>
+                        <th data-dealer="A" class="rounded-tr-lg">A</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-hand="8">8以下</td>
+                        <td class="action-H" data-hand="8" data-dealer="2">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="3">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="4">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="5">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="6">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="7">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="8">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="9">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="10">H</td>
+                        <td class="action-H" data-hand="8" data-dealer="A">H</td>
+                    </tr>
+                    <tr><td data-hand="9">9</td><td class="action-H" data-hand="9" data-dealer="2">H</td><td class="action-D" data-hand="9" data-dealer="3">D</td><td class="action-D" data-hand="9" data-dealer="4">D</td><td class="action-D" data-hand="9" data-dealer="5">D</td><td class="action-D" data-hand="9" data-dealer="6">D</td><td class="action-H" data-hand="9" data-dealer="7">H</td><td class="action-H" data-hand="9" data-dealer="8">H</td><td class="action-H" data-hand="9" data-dealer="9">H</td><td class="action-H" data-hand="9" data-dealer="10">H</td><td class="action-H" data-hand="9" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="10">10</td><td class="action-D" data-hand="10" data-dealer="2">D</td><td class="action-D" data-hand="10" data-dealer="3">D</td><td class="action-D" data-hand="10" data-dealer="4">D</td><td class="action-D" data-hand="10" data-dealer="5">D</td><td class="action-D" data-hand="10" data-dealer="6">D</td><td class="action-D" data-hand="10" data-dealer="7">D</td><td class="action-D" data-hand="10" data-dealer="8">D</td><td class="action-H" data-hand="10" data-dealer="9">H</td><td class="action-H" data-hand="10" data-dealer="10">H</td><td class="action-H" data-hand="10" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="11">11</td><td class="action-D" data-hand="11" data-dealer="2">D</td><td class="action-D" data-hand="11" data-dealer="3">D</td><td class="action-D" data-hand="11" data-dealer="4">D</td><td class="action-D" data-hand="11" data-dealer="5">D</td><td class="action-D" data-hand="11" data-dealer="6">D</td><td class="action-D" data-hand="11" data-dealer="7">D</td><td class="action-D" data-hand="11" data-dealer="8">D</td><td class="action-D" data-hand="11" data-dealer="9">D</td><td class="action-D" data-hand="11" data-dealer="10">D</td><td class="action-D" data-hand="11" data-dealer="A">D</td></tr>
+                    <tr><td data-hand="12">12</td><td class="action-H" data-hand="12" data-dealer="2">H</td><td class="action-H" data-hand="12" data-dealer="3">H</td><td class="action-S" data-hand="12" data-dealer="4">S</td><td class="action-S" data-hand="12" data-dealer="5">S</td><td class="action-S" data-hand="12" data-dealer="6">S</td><td class="action-H" data-hand="12" data-dealer="7">H</td><td class="action-H" data-hand="12" data-dealer="8">H</td><td class="action-H" data-hand="12" data-dealer="9">H</td><td class="action-H" data-hand="12" data-dealer="10">H</td><td class="action-H" data-hand="12" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="13">13</td><td class="action-S" data-hand="13" data-dealer="2">S</td><td class="action-S" data-hand="13" data-dealer="3">S</td><td class="action-S" data-hand="13" data-dealer="4">S</td><td class="action-S" data-hand="13" data-dealer="5">S</td><td class="action-S" data-hand="13" data-dealer="6">S</td><td class="action-H" data-hand="13" data-dealer="7">H</td><td class="action-H" data-hand="13" data-dealer="8">H</td><td class="action-H" data-hand="13" data-dealer="9">H</td><td class="action-H" data-hand="13" data-dealer="10">H</td><td class="action-H" data-hand="13" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="14">14</td><td class="action-S" data-hand="14" data-dealer="2">S</td><td class="action-S" data-hand="14" data-dealer="3">S</td><td class="action-S" data-hand="14" data-dealer="4">S</td><td class="action-S" data-hand="14" data-dealer="5">S</td><td class="action-S" data-hand="14" data-dealer="6">S</td><td class="action-H" data-hand="14" data-dealer="7">H</td><td class="action-H" data-hand="14" data-dealer="8">H</td><td class="action-H" data-hand="14" data-dealer="9">H</td><td class="action-H" data-hand="14" data-dealer="10">H</td><td class="action-H" data-hand="14" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="15">15</td><td class="action-S" data-hand="15" data-dealer="2">S</td><td class="action-S" data-hand="15" data-dealer="3">S</td><td class="action-S" data-hand="15" data-dealer="4">S</td><td class="action-S" data-hand="15" data-dealer="5">S</td><td class="action-S" data-hand="15" data-dealer="6">S</td><td class="action-H" data-hand="15" data-dealer="7">H</td><td class="action-H" data-hand="15" data-dealer="8">H</td><td class="action-H" data-hand="15" data-dealer="9">H</td><td class="action-R" data-hand="15" data-dealer="10">R</td><td class="action-H" data-hand="15" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="16">16</td><td class="action-S" data-hand="16" data-dealer="2">S</td><td class="action-S" data-hand="16" data-dealer="3">S</td><td class="action-S" data-hand="16" data-dealer="4">S</td><td class="action-S" data-hand="16" data-dealer="5">S</td><td class="action-S" data-hand="16" data-dealer="6">S</td><td class="action-H" data-hand="16" data-dealer="7">H</td><td class="action-H" data-hand="16" data-dealer="8">H</td><td class="action-R" data-hand="16" data-dealer="9">R</td><td class="action-R" data-hand="16" data-dealer="10">R</td><td class="action-H" data-hand="16" data-dealer="A">H</td></tr>
+                    <tr>
+                        <td data-hand="17">17以上</td>
+                        <td class="action-S" data-hand="17" data-dealer="2">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="3">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="4">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="5">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="6">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="7">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="8">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="9">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="10">S</td>
+                        <td class="action-S" data-hand="17" data-dealer="A">S</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Back button -->
+        <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
+    </div>
+    
+    <!-- Soft Hand screen (initially hidden) -->
+    <div id="soft-hand-screen" class="hidden flex-col items-center">
+        <h1 class="text-2xl font-bold mb-2">ソフト・ハンド戦略</h1>
+        <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札（Aを含む）の組み合わせから、最適な行動を導き出します。</p>
+
+        <!-- Legend -->
+        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
+        </div>
+
+        <!-- Soft Hand table -->
+        <div class="table-container">
+            <table class="text-sm" data-strategy="soft">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">P \ D</th>
+                        <th data-dealer="2">2</th>
+                        <th data-dealer="3">3</th>
+                        <th data-dealer="4">4</th>
+                        <th data-dealer="5">5</th>
+                        <th data-dealer="6">6</th>
+                        <th data-dealer="7">7</th>
+                        <th data-dealer="8">8</th>
+                        <th data-dealer="9">9</th>
+                        <th data-dealer="10">10</th>
+                        <th data-dealer="A" class="rounded-tr-lg">A</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td data-hand="A, 8">A, 8</td><td class="action-S" data-hand="A, 8" data-dealer="2">S</td><td class="action-S" data-hand="A, 8" data-dealer="3">S</td><td class="action-S" data-hand="A, 8" data-dealer="4">S</td><td class="action-S" data-hand="A, 8" data-dealer="5">S</td><td class="action-D" data-hand="A, 8" data-dealer="6">D</td><td class="action-S" data-hand="A, 8" data-dealer="7">S</td><td class="action-S" data-hand="A, 8" data-dealer="8">S</td><td class="action-S" data-hand="A, 8" data-dealer="9">S</td><td class="action-S" data-hand="A, 8" data-dealer="10">S</td><td class="action-S" data-hand="A, 8" data-dealer="A">S</td></tr>
+                    <tr><td data-hand="A, 7">A, 7</td><td class="action-H" data-hand="A, 7" data-dealer="2">H</td><td class="action-D" data-hand="A, 7" data-dealer="3">D</td><td class="action-D" data-hand="A, 7" data-dealer="4">D</td><td class="action-D" data-hand="A, 7" data-dealer="5">D</td><td class="action-D" data-hand="A, 7" data-dealer="6">D</td><td class="action-S" data-hand="A, 7" data-dealer="7">S</td><td class="action-S" data-hand="A, 7" data-dealer="8">S</td><td class="action-H" data-hand="A, 7" data-dealer="9">H</td><td class="action-H" data-hand="A, 7" data-dealer="10">H</td><td class="action-H" data-hand="A, 7" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="A, 6">A, 6</td><td class="action-H" data-hand="A, 6" data-dealer="2">H</td><td class="action-H" data-hand="A, 6" data-dealer="3">H</td><td class="action-D" data-hand="A, 6" data-dealer="4">D</td><td class="action-D" data-hand="A, 6" data-dealer="5">D</td><td class="action-D" data-hand="A, 6" data-dealer="6">D</td><td class="action-H" data-hand="A, 6" data-dealer="7">H</td><td class="action-H" data-hand="A, 6" data-dealer="8">H</td><td class="action-H" data-hand="A, 6" data-dealer="9">H</td><td class="action-H" data-hand="A, 6" data-dealer="10">H</td><td class="action-H" data-hand="A, 6" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="A, 5">A, 5</td><td class="action-H" data-hand="A, 5" data-dealer="2">H</td><td class="action-H" data-hand="A, 5" data-dealer="3">H</td><td class="action-D" data-hand="A, 5" data-dealer="4">D</td><td class="action-D" data-hand="A, 5" data-dealer="5">D</td><td class="action-D" data-hand="A, 5" data-dealer="6">D</td><td class="action-H" data-hand="A, 5" data-dealer="7">H</td><td class="action-H" data-hand="A, 5" data-dealer="8">H</td><td class="action-H" data-hand="A, 5" data-dealer="9">H</td><td class="action-H" data-hand="A, 5" data-dealer="10">H</td><td class="action-H" data-hand="A, 5" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="A, 4">A, 4</td><td class="action-H" data-hand="A, 4" data-dealer="2">H</td><td class="action-H" data-hand="A, 4" data-dealer="3">H</td><td class="action-D" data-hand="A, 4" data-dealer="4">D</td><td class="action-D" data-hand="A, 4" data-dealer="5">D</td><td class="action-D" data-hand="A, 4" data-dealer="6">D</td><td class="action-H" data-hand="A, 4" data-dealer="7">H</td><td class="action-H" data-hand="A, 4" data-dealer="8">H</td><td class="action-H" data-hand="A, 4" data-dealer="9">H</td><td class="action-H" data-hand="A, 4" data-dealer="10">H</td><td class="action-H" data-hand="A, 4" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="A, 3">A, 3</td><td class="action-H" data-hand="A, 3" data-dealer="2">H</td><td class="action-H" data-hand="A, 3" data-dealer="3">H</td><td class="action-D" data-hand="A, 3" data-dealer="4">D</td><td class="action-D" data-hand="A, 3" data-dealer="5">D</td><td class="action-D" data-hand="A, 3" data-dealer="6">D</td><td class="action-H" data-hand="A, 3" data-dealer="7">H</td><td class="action-H" data-hand="A, 3" data-dealer="8">H</td><td class="action-H" data-hand="A, 3" data-dealer="9">H</td><td class="action-H" data-hand="A, 3" data-dealer="10">H</td><td class="action-H" data-hand="A, 3" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="A, 2">A, 2</td><td class="action-H" data-hand="A, 2" data-dealer="2">H</td><td class="action-H" data-hand="A, 2" data-dealer="3">H</td><td class="action-D" data-hand="A, 2" data-dealer="4">D</td><td class="action-D" data-hand="A, 2" data-dealer="5">D</td><td class="action-D" data-hand="A, 2" data-dealer="6">D</td><td class="action-H" data-hand="A, 2" data-dealer="7">H</td><td class="action-H" data-hand="A, 2" data-dealer="8">H</td><td class="action-H" data-hand="A, 2" data-dealer="9">H</td><td class="action-H" data-hand="A, 2" data-dealer="10">H</td><td class="action-H" data-hand="A, 2" data-dealer="A">H</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Back button -->
+        <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
+    </div>
+    
+    <!-- Pair Hand screen (initially hidden) -->
+    <div id="pair-hand-screen" class="hidden flex-col items-center">
+        <h1 class="text-2xl font-bold mb-2">ペア・ハンド戦略</h1>
+        <p class="text-sm text-center mb-4 text-slate-400">ディーラーのアップカードとあなたの手札（同じ数字のペア）の組み合わせから、最適な行動を導き出します。</p>
+
+        <!-- Legend -->
+        <div class="w-full flex justify-center flex-wrap gap-2 text-xs font-semibold rounded-lg p-2 bg-slate-700 mb-4">
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-red-600"></div>ヒット (H)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-green-600"></div>スタンド (S)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-blue-600"></div>ダブルダウン (D)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-violet-600"></div>スプリット (P)</span>
+            <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>サレンダー (R)</span>
+        </div>
+
+        <!-- Pair Hand table -->
+        <div class="table-container">
+            <table class="text-sm" data-strategy="pair">
+                <thead>
+                    <tr>
+                        <th class="rounded-tl-lg">P \ D</th>
+                        <th data-dealer="2">2</th>
+                        <th data-dealer="3">3</th>
+                        <th data-dealer="4">4</th>
+                        <th data-dealer="5">5</th>
+                        <th data-dealer="6">6</th>
+                        <th data-dealer="7">7</th>
+                        <th data-dealer="8">8</th>
+                        <th data-dealer="9">9</th>
+                        <th data-dealer="10">10</th>
+                        <th data-dealer="A" class="rounded-tr-lg">A</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td data-hand="A, A">A, A</td><td class="action-P" data-hand="A, A" data-dealer="2">P</td><td class="action-P" data-hand="A, A" data-dealer="3">P</td><td class="action-P" data-hand="A, A" data-dealer="4">P</td><td class="action-P" data-hand="A, A" data-dealer="5">P</td><td class="action-P" data-hand="A, A" data-dealer="6">P</td><td class="action-P" data-hand="A, A" data-dealer="7">P</td><td class="action-P" data-hand="A, A" data-dealer="8">P</td><td class="action-P" data-hand="A, A" data-dealer="9">P</td><td class="action-P" data-hand="A, A" data-dealer="10">P</td><td class="action-P" data-hand="A, A" data-dealer="A">P</td></tr>
+                    <tr><td data-hand="10, 10">10, 10</td><td class="action-S" data-hand="10, 10" data-dealer="2">S</td><td class="action-S" data-hand="10, 10" data-dealer="3">S</td><td class="action-S" data-hand="10, 10" data-dealer="4">S</td><td class="action-S" data-hand="10, 10" data-dealer="5">S</td><td class="action-S" data-hand="10, 10" data-dealer="6">S</td><td class="action-S" data-hand="10, 10" data-dealer="7">S</td><td class="action-S" data-hand="10, 10" data-dealer="8">S</td><td class="action-S" data-hand="10, 10" data-dealer="9">S</td><td class="action-S" data-hand="10, 10" data-dealer="10">S</td><td class="action-S" data-hand="10, 10" data-dealer="A">S</td></tr>
+                    <tr><td data-hand="9, 9">9, 9</td><td class="action-P" data-hand="9, 9" data-dealer="2">P</td><td class="action-P" data-hand="9, 9" data-dealer="3">P</td><td class="action-P" data-hand="9, 9" data-dealer="4">P</td><td class="action-P" data-hand="9, 9" data-dealer="5">P</td><td class="action-P" data-hand="9, 9" data-dealer="6">P</td><td class="action-S" data-hand="9, 9" data-dealer="7">S</td><td class="action-P" data-hand="9, 9" data-dealer="8">P</td><td class="action-P" data-hand="9, 9" data-dealer="9">P</td><td class="action-S" data-hand="9, 9" data-dealer="10">S</td><td class="action-S" data-hand="9, 9" data-dealer="A">S</td></tr>
+                    <tr><td data-hand="8, 8">8, 8</td><td class="action-P" data-hand="8, 8" data-dealer="2">P</td><td class="action-P" data-hand="8, 8" data-dealer="3">P</td><td class="action-P" data-hand="8, 8" data-dealer="4">P</td><td class="action-P" data-hand="8, 8" data-dealer="5">P</td><td class="action-P" data-hand="8, 8" data-dealer="6">P</td><td class="action-P" data-hand="8, 8" data-dealer="7">P</td><td class="action-P" data-hand="8, 8" data-dealer="8">P</td><td class="action-P" data-hand="8, 8" data-dealer="9">P</td><td class="action-R" data-hand="8, 8" data-dealer="10">R</td><td class="action-P" data-hand="8, 8" data-dealer="A">P</td></tr>
+                    <tr><td data-hand="7, 7">7, 7</td><td class="action-P" data-hand="7, 7" data-dealer="2">P</td><td class="action-P" data-hand="7, 7" data-dealer="3">P</td><td class="action-P" data-hand="7, 7" data-dealer="4">P</td><td class="action-P" data-hand="7, 7" data-dealer="5">P</td><td class="action-P" data-hand="7, 7" data-dealer="6">P</td><td class="action-H" data-hand="7, 7" data-dealer="7">H</td><td class="action-H" data-hand="7, 7" data-dealer="8">H</td><td class="action-H" data-hand="7, 7" data-dealer="9">H</td><td class="action-H" data-hand="7, 7" data-dealer="10">H</td><td class="action-H" data-hand="7, 7" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="6, 6">6, 6</td><td class="action-P" data-hand="6, 6" data-dealer="2">P</td><td class="action-P" data-hand="6, 6" data-dealer="3">P</td><td class="action-P" data-hand="6, 6" data-dealer="4">P</td><td class="action-P" data-hand="6, 6" data-dealer="5">P</td><td class="action-P" data-hand="6, 6" data-dealer="6">P</td><td class="action-H" data-hand="6, 6" data-dealer="7">H</td><td class="action-H" data-hand="6, 6" data-dealer="8">H</td><td class="action-H" data-hand="6, 6" data-dealer="9">H</td><td class="action-H" data-hand="6, 6" data-dealer="10">H</td><td class="action-H" data-hand="6, 6" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="5, 5">5, 5</td><td class="action-D" data-hand="5, 5" data-dealer="2">D</td><td class="action-D" data-hand="5, 5" data-dealer="3">D</td><td class="action-D" data-hand="5, 5" data-dealer="4">D</td><td class="action-D" data-hand="5, 5" data-dealer="5">D</td><td class="action-D" data-hand="5, 5" data-dealer="6">D</td><td class="action-D" data-hand="5, 5" data-dealer="7">D</td><td class="action-D" data-hand="5, 5" data-dealer="8">D</td><td class="action-H" data-hand="5, 5" data-dealer="9">H</td><td class="action-H" data-hand="5, 5" data-dealer="10">H</td><td class="action-H" data-hand="5, 5" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="4, 4">4, 4</td><td class="action-H" data-hand="4, 4" data-dealer="2">H</td><td class="action-H" data-hand="4, 4" data-dealer="3">H</td><td class="action-H" data-hand="4, 4" data-dealer="4">H</td><td class="action-P" data-hand="4, 4" data-dealer="5">P</td><td class="action-P" data-hand="4, 4" data-dealer="6">P</td><td class="action-H" data-hand="4, 4" data-dealer="7">H</td><td class="action-H" data-hand="4, 4" data-dealer="8">H</td><td class="action-H" data-hand="4, 4" data-dealer="9">H</td><td class="action-H" data-hand="4, 4" data-dealer="10">H</td><td class="action-H" data-hand="4, 4" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="3, 3">3, 3</td><td class="action-P" data-hand="3, 3" data-dealer="2">P</td><td class="action-P" data-hand="3, 3" data-dealer="3">P</td><td class="action-P" data-hand="3, 3" data-dealer="4">P</td><td class="action-P" data-hand="3, 3" data-dealer="5">P</td><td class="action-P" data-hand="3, 3" data-dealer="6">P</td><td class="action-H" data-hand="3, 3" data-dealer="7">H</td><td class="action-H" data-hand="3, 3" data-dealer="8">H</td><td class="action-H" data-hand="3, 3" data-dealer="9">H</td><td class="action-H" data-hand="3, 3" data-dealer="10">H</td><td class="action-H" data-hand="3, 3" data-dealer="A">H</td></tr>
+                    <tr><td data-hand="2, 2">2, 2</td><td class="action-P" data-hand="2, 2" data-dealer="2">P</td><td class="action-P" data-hand="2, 2" data-dealer="3">P</td><td class="action-P" data-hand="2, 2" data-dealer="4">P</td><td class="action-P" data-hand="2, 2" data-dealer="5">P</td><td class="action-P" data-hand="2, 2" data-dealer="6">P</td><td class="action-H" data-hand="2, 2" data-dealer="7">H</td><td class="action-H" data-hand="2, 2" data-dealer="8">H</td><td class="action-H" data-hand="2, 2" data-dealer="9">H</td><td class="action-H" data-hand="2, 2" data-dealer="10">H</td><td class="action-H" data-hand="2, 2" data-dealer="A">H</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Back button -->
+        <button onclick="goBack()" class="back-button w-full mt-4 mb-4 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-center">戻る</button>
+    </div>
+
+</div>
+
+<script>
+    // Global state variables
+    let selectedPlayerHand = null;
+    let selectedDealerCard = null;
+
+    /**
+     * Toggles the visibility of different sections of the app.
+     * @param {string} sectionId The ID of the section to show.
+     */
+    function showSection(sectionId) {
+        // Clear highlights and selections when switching screens
+        selectedPlayerHand = null;
+        selectedDealerCard = null;
+        updateHighlight();
+
+        const sections = document.querySelectorAll('.container > div');
+        sections.forEach(section => {
+            if (section.id === sectionId) {
+                section.classList.remove('hidden');
+                section.classList.add('animate-fadeIn');
+            } else {
+                section.classList.add('hidden');
+                section.classList.remove('animate-fadeIn');
+            }
+        });
+    }
+
+    /**
+     * Navigates back to the main screen.
+     */
+    function goBack() {
+        showSection('main-screen');
+    }
+
+    /**
+     * Updates the highlighting based on the selected player hand and dealer card.
+     */
+    function updateHighlight() {
+        const tables = document.querySelectorAll('table');
+
+        tables.forEach(table => {
+            // Clear all previous highlights
+            const allCells = table.querySelectorAll('td, th');
+            allCells.forEach(cell => {
+                cell.classList.remove('highlighted-row-header', 'highlighted-col-header', 'highlighted-cell', 'highlighted-pd', 'highlighted-intersection');
+            });
+
+            // Apply new highlights for player hand if selected
+            if (selectedPlayerHand) {
+                const playerHeaders = table.querySelectorAll(`[data-hand="${selectedPlayerHand}"]`);
+                playerHeaders.forEach(header => {
+                    header.classList.add('highlighted-row-header');
+                });
+            }
+            
+            // Apply new highlights for dealer card if selected
+            if (selectedDealerCard) {
+                const dealerHeader = table.querySelector(`thead th[data-dealer="${selectedDealerCard}"]`);
+                if (dealerHeader) {
+                    dealerHeader.classList.add('highlighted-col-header');
+                    const dealerIndex = Array.from(dealerHeader.parentNode.children).indexOf(dealerHeader);
+                    table.querySelectorAll('tr').forEach(row => {
+                        const cell = row.children[dealerIndex];
+                        if (cell && cell.tagName === 'TD') {
+                            cell.classList.add('highlighted-col-header');
+                        }
+                    });
+                }
+            }
+
+            // Highlight the intersection cell if both are selected
+            if (selectedPlayerHand && selectedDealerCard) {
+                const intersectionCell = table.querySelector(`td[data-hand="${selectedPlayerHand}"][data-dealer="${selectedDealerCard}"]`);
+                if (intersectionCell) {
+                    intersectionCell.classList.add('highlighted-intersection');
+                    // Remove other highlights from the intersection cell
+                    intersectionCell.classList.remove('highlighted-row-header', 'highlighted-col-header');
+                }
+            }
+        });
+    }
+
+    /**
+     * Initializes all event listeners for the tables.
+     */
+    function initializeTableListeners() {
+        // Get all tables and add a single click listener to each
+        const tables = document.querySelectorAll('table');
+
+        tables.forEach(table => {
+            // Add event listener to player hand cells (first column)
+            const playerHandHeaders = table.querySelectorAll('tbody td[data-hand]');
+            playerHandHeaders.forEach(cell => {
+                cell.onclick = (event) => {
+                    const currentHand = event.target.dataset.hand;
+                    if (selectedPlayerHand === currentHand) {
+                        // Deselect if already selected
+                        selectedPlayerHand = null;
+                    } else {
+                        selectedPlayerHand = currentHand;
+                    }
+                    updateHighlight();
+                };
+            });
+
+            // Add event listener to dealer card headers (top row)
+            const dealerHeaders = table.querySelectorAll('thead th[data-dealer]');
+            dealerHeaders.forEach(cell => {
+                cell.onclick = (event) => {
+                    const currentDealer = event.target.dataset.dealer;
+                    if (selectedDealerCard === currentDealer) {
+                        // Deselect if already selected
+                        selectedDealerCard = null;
+                    } else {
+                        selectedDealerCard = currentDealer;
+                    }
+                    updateHighlight();
+                };
+            });
+
+            // Add event listener to action cells for dual highlighting
+            const actionCells = table.querySelectorAll('tbody td[data-hand][data-dealer]');
+            actionCells.forEach(cell => {
+                cell.onclick = (event) => {
+                    const targetHand = event.target.dataset.hand;
+                    const targetDealer = event.target.dataset.dealer;
+
+                    // Toggle selection for both hand and dealer card
+                    if (selectedPlayerHand === targetHand && selectedDealerCard === targetDealer) {
+                        selectedPlayerHand = null;
+                        selectedDealerCard = null;
+                    } else {
+                        selectedPlayerHand = targetHand;
+                        selectedDealerCard = targetDealer;
+                    }
+                    
+                    updateHighlight();
+                };
+            });
+        });
+    }
+
+    // Set up the app on page load
+    window.onload = function() {
+        // Initially show the main menu
+        showSection('main-screen');
+        // Initialize all event listeners
+        initializeTableListeners();
+    };
+</script>
+</body>
+</html>
